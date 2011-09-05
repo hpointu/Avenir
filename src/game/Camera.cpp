@@ -37,8 +37,11 @@ void Camera::onEvent(const SDL_Event &event)
 	{
 		mTheta -= (event.motion.xrel*0.01)/(mZoom*mZoom);
 		mPhi += (event.motion.yrel*0.01)/(mZoom*mZoom);
-//		theta -= event.motion.xrel*0.2;
-//		phi -= event.motion.yrel*0.2;
+
+		if(mPhi>(M_PI/2.f))
+			mPhi = (M_PI/2.f);
+		if(mPhi<-(M_PI/2.f))
+			mPhi = -(M_PI/2.f);
 
 	}
 

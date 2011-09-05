@@ -11,10 +11,13 @@ public:
 
 	void render();
 
-	void randomizeMap();
+	void randomizeMap(double factor = 0.1);
 
 	void deformVertexLinear(int i, int j, double amount, double radius);
 	void deformVertex(int i, int j, double amount);
+
+	void deformLine(int i1, int j1, int i2, int j2, double amount, double radius = 0.1);
+	void createRiver(int offset=10, int length=10);
 
 private:
 
@@ -30,6 +33,7 @@ private:
 	} Vertex;
 
 	std::vector< std::vector<Vertex> > map;
+	std::vector< std::vector<Vertex> > waterMap;
 };
 
 #endif // PLANET_HPP
