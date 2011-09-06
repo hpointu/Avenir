@@ -36,8 +36,22 @@ Planet::Planet() :
 	}
 	waterMap = map;
 
-//	deformVertexLinear(17, 33, -0.2, 0.1);
-	createRiver(10);
+//	deformVertexLinear(mStacks/2, mSlices/2, 0.2, 0.1f, 0.f);
+//	deformVertex(mStacks/2, mSlices/2, 0.2);
+
+	for(int t = -mSlices/2; t<mSlices/2; t++)
+	{
+		int tmp = rand()%6;
+		if(tmp == 3)
+		{
+//			createRiver(t);
+			int _i = (rand()%(3*mStacks/4))+mStacks/4;
+			double amount = 0.1;
+			if(rand()%2 == 0)
+				amount *= -1;
+			deformVertexLinear(_i, t, amount, 0.1f, 0.9);
+		}
+	}
 //	deformLine(32,-32, 35,10, -0.05, 0.1);
 //	createRiver(10);createRiver(10);createRiver(10);
 //	createRiver(10);createRiver(10);createRiver(10);
@@ -76,12 +90,18 @@ void Planet::randomizeMap(double factor)
 	}
 }
 
-void Planet::deformVertexLinear(int i, int j, double amount, double radius)
+void Planet::deformVertexLinear(int i, int j, double amount, double radius, double stroke)
 {
 	if(radius>1) radius = 1; // clip radius
+	if(radius<0) radius = 0;
+	if(stroke>=1) stroke = 0.99; // clip stroke
+	if(stroke<0) stroke = 0;
 
 	int iRadius = (mStacks/2)*radius;
 	int jRadius = (mSlices/2)*radius;
+
+	double iDelta = iRadius - (iRadius*stroke);
+	double jDelta = jRadius - (jRadius*stroke);
 
 	for(int k=-iRadius; k<=iRadius; k++)
 	{
@@ -89,8 +109,16 @@ void Planet::deformVertexLinear(int i, int j, double amount, double radius)
 		{
 			if(i+k<mStacks && i+k>0 ) // j is correctly managed later
 			{
-				double factorI = 1*(1.f - (fabs(k)/(iRadius)));
-				double factorJ = 1*(1.f - (fabs(l)/(jRadius)));
+
+				double attI = ((fabs(k)-(iRadius*stroke))/(iDelta));
+				double factorI = 1*(1.f - attI );
+
+				double attJ = ((fabs(l)-(jRadius*stroke))/(jDelta));
+				double factorJ = 1*(1.f - attJ);
+
+				if(factorI>1) factorI = 1.f;
+				if(factorJ>1) factorJ = 1.f;
+
 				double offset = amount*factorI*factorJ;
 
 				deformVertex(i+k,j+l,offset);
@@ -115,6 +143,7 @@ void Planet::deformVertex(int i, int j, double amount)
 
 void Planet::deformLine(int i1, int j1, int i2, int j2, double amount, double radius)
 {
+	amount *= radius;
 
 	int sx, sy;
 	int dx = abs(i2-i1);
@@ -143,15 +172,22 @@ void Planet::deformLine(int i1, int j1, int i2, int j2, double amount, double ra
 	} while(i1 != i2 || j1 != j2);
 }
 
-void Planet::createRiver(int offset, int length)
+void Planet::createRiver(int startJ)
 {
-	int startI = (rand()%(mStacks-5))+2;
-	int endI = (rand()%(mStacks-5))+2;
+	int minI = 1*mStacks/6;
+	int maxI = 5*mStacks/6;
+	int startI = (rand()%(maxI-minI))+minI;
+	int endI = (rand()%(maxI-minI))+minI;
 
-	int startJ = rand()%(mSlices*2)-mSlices;
+//	int startJ = rand()%(mSlices*2)-mSlices;
 	int endJ = rand()%(mSlices*2)-mSlices;
 
-	deformLine(startI, startJ, endI, endJ, -0.05);
+	double amount = 0.3;
+	int tmp = rand()%2;
+	if(tmp>0)
+		amount *= -1;
+
+	deformLine(startI, startJ, endI, endJ, amount);
 }
 
 void Planet::render()
