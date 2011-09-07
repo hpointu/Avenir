@@ -4,8 +4,8 @@
 #include <iostream>
 
 Planet::Planet() :
-	mSlices(128),
-	mStacks(128),
+	mSlices(4),
+	mStacks(4),
 	mRadius(1000.f)
 {
 
@@ -16,6 +16,8 @@ Planet::Planet() :
 	{
 		map[i].resize(mSlices);
 	}
+
+	testMap = new GLfloat[3*(mSlices)*(mStacks+1)];
 
 
 	// computing and storing vertices
@@ -36,17 +38,19 @@ Planet::Planet() :
 			v.z = sin(t*M_PI/180.f)*mRadius;
 			map[ind_i][ind_j].pos = v;
 			map[ind_i][ind_j].color = c;
+			testMap[(mSlices*3*ind_i)+ 3*ind_j+0]=v.x;
+			testMap[(mSlices*3*ind_i)+ 3*ind_j+1]=v.y;
+			testMap[(mSlices*3*ind_i)+ 3*ind_j+2]=v.z;
 			ind_j++;
 		}
 		ind_i++;
 	}
-	waterMap = map;
+//	waterMap = map;
 
 	// making relief
-//	elevateAll(0.005);
-	elevatePoles(0.3);
-	randomizeMap(10.0/(mSlices));
-	colorize();
+//	elevatePoles(0.3);
+//	randomizeMap(10.0/(mSlices));
+//	colorize();
 }
 
 
@@ -183,51 +187,61 @@ void Planet::createRiver(int startJ)
 
 void Planet::render()
 {
-//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	// render sphere from map
-	for(int i=0; i<mStacks; i++)
-	{
-		for(int j=0; j<mSlices; j++)
-		{
-			glBegin(GL_QUADS);
-			int _j = j+1; if(_j>=mSlices) _j=0;
-			Vertex v1 = map[i][j];
-			colorVertex(v1.color);
-			drawVertex(v1);
-			Vertex v2 = map[i][_j];
-			colorVertex(v2.color);
-			drawVertex(v2);
-			Vertex v3 = map[i+1][_j];
-			colorVertex(v3.color);
-			drawVertex(v3);
-			Vertex v4 = map[i+1][j];
-			colorVertex(v4.color);
-			drawVertex(v4);
-			glEnd();
-		}
-	}
+//	for(int i=0; i<mStacks; i++)
+//	{
+//		for(int j=0; j<mSlices; j++)
+//		{
+//			glBegin(GL_POINTS);
+//			int _j = j+1; if(_j>=mSlices) _j=0;
+//			Vertex v1 = map[i][j];
+//			colorVertex(v1.color);
+//			drawVertex(v1);
+//			Vertex v2 = map[i][_j];
+//			colorVertex(v2.color);
+//			drawVertex(v2);
+//			Vertex v3 = map[i+1][_j];
+//			colorVertex(v3.color);
+//			drawVertex(v3);
+//			Vertex v4 = map[i+1][j];
+//			colorVertex(v4.color);
+//			drawVertex(v4);
+//			glEnd();
+//		}
+//	}
 
-	renderWater();
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, testMap);
+	glDrawArrays(GL_POINTS, 0, 3*mStacks*mSlices);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+
+//	renderWater();
 }
 
 void Planet::renderWater()
 {
+	int di = 4;
+	int dj = 2;
+
+//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	for(int i=0; i<mStacks; i++)
+	for(int i=0; i<mStacks/di; i++)
 	{
-		for(int j=0; j<mSlices; j++)
+		for(int j=0; j<mSlices/dj; j++)
 		{
-			glBegin(GL_QUADS);
+			glBegin(GL_POINTS);
 			glColor4d(0,0.6,0.6,0.6);
-			int _j = j+1; if(_j>=mSlices) _j=0;
-			Vertex v1 = waterMap[i][j];
+			int _j = j+1; if(_j>=mSlices/dj) _j=0;
+			Vertex v1 = waterMap[di*i][dj*j];
 			drawVertex(v1);
-			Vertex v2 = waterMap[i][_j];
+			Vertex v2 = waterMap[di*i][dj*_j];
 			drawVertex(v2);
-			Vertex v3 = waterMap[i+1][_j];
+			Vertex v3 = waterMap[di*(i+1)][dj*_j];
 			drawVertex(v3);
-			Vertex v4 = waterMap[i+1][j];
+			Vertex v4 = waterMap[di*(i+1)][dj*j];
 			drawVertex(v4);
 			glEnd();
 		}
@@ -238,6 +252,7 @@ void Planet::renderWater()
 void Planet::colorVertex(ColorRGBA c)
 {
 	glColor4d(c.red(), c.green(), c.blue(), c.alpha());
+	glColor4d(1,1,1,1);
 }
 
 void Planet::drawVertex(Vertex v)

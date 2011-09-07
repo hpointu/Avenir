@@ -5,11 +5,11 @@ EventManager::EventManager()
 	listeners = new std::vector<EventListener*>();
 }
 
-void EventManager::captureEvent()
+void EventManager::captureEvent(sf::Window *w)
 {
-	SDL_Event event;
-	while(SDL_PollEvent(&event))
-		forward(event);
+	sf::Event e;
+	while(w->GetEvent(e))
+		forward(e);
 }
 
 void EventManager::subscribe(EventListener *subscriber)
@@ -17,7 +17,7 @@ void EventManager::subscribe(EventListener *subscriber)
 	listeners->push_back(subscriber);
 }
 
-void EventManager::forward(const SDL_Event &event)
+void EventManager::forward(const sf::Event &event)
 {
 	std::vector<EventListener*>::iterator it;
 	for(it = listeners->begin();

@@ -45,6 +45,9 @@ private:
 
 	std::vector< std::vector<Vertex> > map;
 	std::vector< std::vector<Vertex> > waterMap;
+
+	GLfloat *testMap;
+	GLuint *zob;
 };
 
 #endif // PLANET_HPP

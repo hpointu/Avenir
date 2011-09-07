@@ -2,7 +2,7 @@
 #define CAMERA_HPP
 
 #include <GL/glew.h>
-#include <SDL/SDL.h>
+#include <SFML/Graphics.hpp>
 
 #include "../core/EventListener.hpp"
 
@@ -15,7 +15,7 @@ public:
 
 	void updatePerspective();
 
-	void onEvent(const SDL_Event &event);
+	void onEvent(const sf::Event &event);
 
 private:
 	float mFovy;
@@ -28,6 +28,7 @@ private:
 	double mZoom;
 
 	bool mHold;
+	sf::Vector2f mouseClick;
 
 };
 

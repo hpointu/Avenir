@@ -1,8 +1,8 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 
-#include <SDL/SDL.h>
 #include <GL/glew.h>
+#include <SFML/Graphics.hpp>
 #include <time.h>
 #include <stdlib.h>
 
@@ -27,7 +27,7 @@ public:
 	int height(){return mHeight;}
 	double ratio(){return (double)mWidth/mHeight;}
 
-	virtual void onEvent(const SDL_Event &event);
+	virtual void onEvent(const sf::Event &event);
 
 private:
 	Game();
@@ -38,6 +38,8 @@ private:
 	int currentTime, lastTime;
 
 	Scene *mScene;
+
+	sf::Window *window;
 
 };
 

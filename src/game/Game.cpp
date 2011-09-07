@@ -10,8 +10,10 @@ Game::Game() :
 	mWidth(800),
 	mHeight(600)
 {
-	srand(time(0));
+	srand(1234);
+//	srand(time(0));
 	EventManager::getInstance()->subscribe(this);
+
 }
 
 /**
@@ -20,11 +22,7 @@ Game::Game() :
   */
 void Game::init()
 {
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
-	SDL_WM_SetCaption("Avenir...", NULL);
-	SDL_SetVideoMode(mWidth, mHeight, 32, SDL_OPENGL);
-
-	atexit(SDL_Quit);
+	window = new sf::Window(sf::VideoMode(mWidth,mHeight,32), "Avenir");
 
 	mRunning = true;
 
@@ -63,12 +61,12 @@ void Game::initOpenGL()
   */
 void Game::run()
 {
-	lastTime = SDL_GetTicks();
+//	lastTime = SDL_GetTicks();
 	currentTime = lastTime;
 	int frames = 0;
 	while(mRunning)
 	{
-		EventManager::getInstance()->captureEvent();
+		EventManager::getInstance()->captureEvent(window);
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -78,32 +76,34 @@ void Game::run()
 //		currentTime = SDL_GetTicks();
 //		std::stringstream ss;
 //		ss << frames << " FPS";
-//		baseLogger()->debugLine(ss.str());
-//		if(currentTime % 60 == 0)
+//		baseLogger()->infoLine(ss.str());
+//		if(currentTime - lastTime > 600)
 //		{
 //			std::stringstream ss;
 //			ss << frames << " FPS";
-//			baseLogger()->debugLine(ss.str());
+//			baseLogger()->infoLine(ss.str());
 //			lastTime = currentTime;
 //			frames = 0;
 //		}
 
-//		frames++;
+		frames++;
 
-		glFlush();
-		SDL_GL_SwapBuffers();
+//		glFlush();
+		window->Display();
 	}
 }
 
 /**
   Gestion des événements Jeu
   */
-void Game::onEvent(const SDL_Event &event)
+void Game::onEvent(const sf::Event &event)
 {
-	switch(event.type)
+	switch(event.Type)
 	{
-	case SDL_QUIT:
+	case sf::Event::Closed:
 		mRunning = false;
+		break;
+	default:
 		break;
 	}
 }

@@ -31,36 +31,68 @@ void Camera::look()
 	gluLookAt(posX,posY,posZ, 0,0,0, 0,0,1);
 }
 
-void Camera::onEvent(const SDL_Event &event)
+void Camera::onEvent(const sf::Event &event)
 {
-	if(event.type == SDL_MOUSEMOTION && mHold)
+	if(event.Type == sf::Event::MouseButtonPressed && event.MouseButton.Button == sf::Mouse::Left)
 	{
-		mTheta -= (event.motion.xrel*0.01)/(mZoom*mZoom);
-		mPhi += (event.motion.yrel*0.01)/(mZoom*mZoom);
+		mouseClick = sf::Vector2f(event.MouseButton.X, event.MouseButton.Y);
+		mHold = true;
+	}
+	else if(event.Type == sf::Event::MouseButtonReleased && event.MouseButton.Button == sf::Mouse::Left)
+	{
+		mHold = false;
+	}
+	else if(event.Type == sf::Event::MouseMoved && mHold)
+	{
+		double dX = event.MouseMove.X - mouseClick.x;
+		double dY = event.MouseMove.Y - mouseClick.y;
+		mTheta -= (dX*0.01)/(mZoom*mZoom);
+		mPhi += (dY*0.01)/(mZoom*mZoom);
 
 		if(mPhi>(M_PI/2.f))
 			mPhi = (M_PI/2.f);
 		if(mPhi<-(M_PI/2.f))
 			mPhi = -(M_PI/2.f);
 
+		mouseClick = sf::Vector2f(event.MouseMove.X, event.MouseMove.Y);
 	}
 
-	else if(event.type == SDL_MOUSEBUTTONDOWN ||
-			event.type == SDL_MOUSEBUTTONUP)
+	else if(event.Type == sf::Event::MouseWheelMoved)
 	{
-		if(event.button.button == SDL_BUTTON_LEFT)
-		{
-			mHold = (event.type == SDL_MOUSEBUTTONDOWN);
-		}
-		else if(event.button.button == SDL_BUTTON_WHEELUP)
-		{
-			if(mZoom < 1.8f)
-				mZoom += 0.05;
-		}
-		else if(event.button.button == SDL_BUTTON_WHEELDOWN)
-		{
-
+		int delta = event.MouseWheel.Delta;
+		if(delta>0)
+			mZoom += 0.05;
+		else
 			mZoom -= 0.05;
-		}
 	}
+	//	if(event.type == SDL_MOUSEMOTION && mHold)
+	//	{
+	//		mTheta -= (event.motion.xrel*0.01)/(mZoom*mZoom);
+	//		mPhi += (event.motion.yrel*0.01)/(mZoom*mZoom);
+
+	//		if(mPhi>(M_PI/2.f))
+	//			mPhi = (M_PI/2.f);
+	//		if(mPhi<-(M_PI/2.f))
+	//			mPhi = -(M_PI/2.f);
+
+	//	}
+
+	//	else if(event.type == SDL_MOUSEBUTTONDOWN ||
+	//			event.type == SDL_MOUSEBUTTONUP)
+	//	{
+	//		if(event.button.button == SDL_BUTTON_LEFT)
+	//		{
+	//			mHold = (event.type == SDL_MOUSEBUTTONDOWN);
+	//		}
+	//		else if(event.button.button == SDL_BUTTON_WHEELUP)
+	//		{
+	//			if(mZoom < 1.8f)
+	//				mZoom += 0.05;
+	//		}
+	//		else if(event.button.button == SDL_BUTTON_WHEELDOWN)
+	//		{
+
+	//			mZoom -= 0.05;
+	//		}
+	//	}
 }
