@@ -4,6 +4,9 @@
 #include <GL/glew.h>
 #include <vector>
 
+#include "../core/ColorRGBA.hpp"
+#include "../core/Vector3d.hpp"
+
 class Planet
 {
 public:
@@ -20,17 +23,25 @@ public:
 	void createRiver(int startJ);
 
 private:
+	typedef struct
+	{
+		Vector3d pos;
+		ColorRGBA color;
+	} Vertex;
 
 	int mSlices, mStacks;
 
 	double mRadius;
 
-	typedef struct
-	{
-		double x;
-		double y;
-		double z;
-	} Vertex;
+	void colorVertex(ColorRGBA c);
+	void drawVertex(Vertex v);
+
+	void renderWater();
+
+	void elevateAll(double amount = 0.1);
+	void elevatePoles(double amount = 0.1);
+
+	void colorize();
 
 	std::vector< std::vector<Vertex> > map;
 	std::vector< std::vector<Vertex> > waterMap;

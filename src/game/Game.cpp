@@ -1,6 +1,9 @@
 #include "Game.hpp"
 #include "../core/EventManager.hpp"
 #include <iostream>
+#include <sstream>
+
+#include <GL/glut.h>
 
 Game::Game() :
 	mRunning(false),
@@ -17,7 +20,7 @@ Game::Game() :
   */
 void Game::init()
 {
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 	SDL_WM_SetCaption("Avenir...", NULL);
 	SDL_SetVideoMode(mWidth, mHeight, 32, SDL_OPENGL);
 
@@ -38,6 +41,10 @@ void Game::initOpenGL()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_COLOR_MATERIAL);
 
+//	glEnable(GL_NORMALIZE);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
 	// initialisation de GLEW
 	GLenum code = glewInit();
 	if(code != GLEW_OK)
@@ -56,6 +63,9 @@ void Game::initOpenGL()
   */
 void Game::run()
 {
+	lastTime = SDL_GetTicks();
+	currentTime = lastTime;
+	int frames = 0;
 	while(mRunning)
 	{
 		EventManager::getInstance()->captureEvent();
@@ -64,6 +74,21 @@ void Game::run()
 
 		// rendu de la scene :
 		mScene->render();
+
+//		currentTime = SDL_GetTicks();
+//		std::stringstream ss;
+//		ss << frames << " FPS";
+//		baseLogger()->debugLine(ss.str());
+//		if(currentTime % 60 == 0)
+//		{
+//			std::stringstream ss;
+//			ss << frames << " FPS";
+//			baseLogger()->debugLine(ss.str());
+//			lastTime = currentTime;
+//			frames = 0;
+//		}
+
+//		frames++;
 
 		glFlush();
 		SDL_GL_SwapBuffers();

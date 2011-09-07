@@ -3,21 +3,26 @@
 #include <stdlib.h>
 #include <iostream>
 
-// TODO: bug under 32*32
 Planet::Planet() :
-	mSlices(64),
-	mStacks(64),
+	mSlices(128),
+	mStacks(128),
 	mRadius(1000.f)
 {
+
+
 	// initialize map
 	map.resize(mStacks+1);
 	for(int i=0; i<mStacks+1; i++)
+	{
 		map[i].resize(mSlices);
+	}
 
 
 	// computing and storing vertices
 	double pdelta = 360.f/mSlices;
 	double tdelta = 180.f/mStacks;
+
+	ColorRGBA c;
 
 	int ind_i = 0;
 	for(double t=-90; t<=90; t += tdelta)
@@ -25,41 +30,23 @@ Planet::Planet() :
 		int ind_j = 0;
 		for(double p=0; p<360; p += pdelta)
 		{
-			Vertex v;
+			Vector3d v;
 			v.x = mRadius*cos(t*M_PI/180.f)*cos(p*M_PI/180.f);
 			v.y = mRadius*cos(t*M_PI/180.f)*sin(p*M_PI/180.f);
 			v.z = sin(t*M_PI/180.f)*mRadius;
-			map[ind_i][ind_j] = v;
+			map[ind_i][ind_j].pos = v;
+			map[ind_i][ind_j].color = c;
 			ind_j++;
 		}
 		ind_i++;
 	}
 	waterMap = map;
 
-//	deformVertexLinear(mStacks/2, mSlices/2, 0.2, 0.1f, 0.f);
-//	deformVertex(mStacks/2, mSlices/2, 0.2);
-
-	for(int t = -mSlices/2; t<mSlices/2; t++)
-	{
-		int tmp = rand()%6;
-		if(tmp == 3)
-		{
-//			createRiver(t);
-			int _i = (rand()%(3*mStacks/4))+mStacks/4;
-			double amount = 0.1;
-			if(rand()%2 == 0)
-				amount *= -1;
-			deformVertexLinear(_i, t, amount, 0.1f, 0.9);
-		}
-	}
-//	deformLine(32,-32, 35,10, -0.05, 0.1);
-//	createRiver(10);createRiver(10);createRiver(10);
-//	createRiver(10);createRiver(10);createRiver(10);
-//	createRiver(10);createRiver(10);createRiver(10);
-//	randomizeMap(0.1);
-
-//	deformVertex(16, 32, 0.05);
-//	deformVertex(16, 33, -0.05);
+	// making relief
+//	elevateAll(0.005);
+	elevatePoles(0.3);
+	randomizeMap(10.0/(mSlices));
+	colorize();
 }
 
 
@@ -70,12 +57,12 @@ Planet::Planet() :
   */
 void Planet::randomizeMap(double factor)
 {
-	for(int i=2; i<mStacks-1; i++)
+	for(int i=0; i<mStacks; i++)
 	{
 		// la latitude détermine la puissance du modifier
 		double modifier = mStacks/2 - fabs((-mStacks/2) + i);
 //		std::cout << "modif : " << (modifier/(mStacks/2)) << std::endl;
-		for(int j=2; j<mSlices-2; j++)
+		for(int j=0; j<mSlices; j++)
 		{
 			double fac = (rand()%10000)/10000.f;
 			fac -= 0.5;
@@ -97,8 +84,8 @@ void Planet::deformVertexLinear(int i, int j, double amount, double radius, doub
 	if(stroke>=1) stroke = 0.99; // clip stroke
 	if(stroke<0) stroke = 0;
 
-	int iRadius = (mStacks/2)*radius;
-	int jRadius = (mSlices/2)*radius;
+	double iRadius = (mStacks/2.f)*radius;
+	double jRadius = (mSlices/4.f)*radius;
 
 	double iDelta = iRadius - (iRadius*stroke);
 	double jDelta = jRadius - (jRadius*stroke);
@@ -107,13 +94,17 @@ void Planet::deformVertexLinear(int i, int j, double amount, double radius, doub
 	{
 		for(int l=-jRadius; l<=jRadius; l++)
 		{
-			if(i+k<mStacks && i+k>0 ) // j is correctly managed later
+			if(i+k<=mStacks && i+k>=0 ) // j is correctly managed later
 			{
 
-				double attI = ((fabs(k)-(iRadius*stroke))/(iDelta));
+				double attI = 1.f;
+				if(iDelta>0.f)
+					attI = ((fabs(k)-(iRadius*stroke))/(iDelta));
 				double factorI = 1*(1.f - attI );
 
-				double attJ = ((fabs(l)-(jRadius*stroke))/(jDelta));
+				double attJ = 1.f;
+				if(jDelta>0.f)
+					attJ = ((fabs(l)-(jRadius*stroke))/(jDelta));
 				double factorJ = 1*(1.f - attJ);
 
 				if(factorI>1) factorI = 1.f;
@@ -134,11 +125,11 @@ void Planet::deformVertex(int i, int j, double amount)
 	if(j>=mSlices) j-=mSlices;
 
 	double offset = 1.f + amount;
-	Vertex v = map[i][j];
+	Vector3d v = map[i][j].pos;
 	v.x *= offset;
 	v.y *= offset;
 	v.z *= offset;
-	map[i][j] = v;
+	map[i][j].pos = v;
 }
 
 void Planet::deformLine(int i1, int j1, int i2, int j2, double amount, double radius)
@@ -192,26 +183,137 @@ void Planet::createRiver(int startJ)
 
 void Planet::render()
 {
-	glColor3d(1,1,1);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	// render sphere from map
 	for(int i=0; i<mStacks; i++)
 	{
-		glBegin(GL_QUAD_STRIP);
-		glColor3d(0,0,1); // seam color (debug)
-		Vertex v1 = map[i+1][0]; glVertex3d(v1.x, v1.y, v1.z);
-		Vertex v2 = map[i][0]; glVertex3d(v2.x, v2.y, v2.z);
-		glColor3d(1,1,1);
-		for(int j=0; j<mSlices-1; j++)
+		for(int j=0; j<mSlices; j++)
 		{
-			Vertex v3 = map[i+1][j+1]; glVertex3d(v3.x, v3.y, v3.z);
-			Vertex v4 = map[i][j+1]; glVertex3d(v4.x, v4.y, v4.z);
+			glBegin(GL_QUADS);
+			int _j = j+1; if(_j>=mSlices) _j=0;
+			Vertex v1 = map[i][j];
+			colorVertex(v1.color);
+			drawVertex(v1);
+			Vertex v2 = map[i][_j];
+			colorVertex(v2.color);
+			drawVertex(v2);
+			Vertex v3 = map[i+1][_j];
+			colorVertex(v3.color);
+			drawVertex(v3);
+			Vertex v4 = map[i+1][j];
+			colorVertex(v4.color);
+			drawVertex(v4);
+			glEnd();
 		}
-		// last faces :
-		glColor3d(1,0,0); // seam color (debug)
-		Vertex v3 = map[i+1][0]; glVertex3d(v3.x, v3.y, v3.z);
-		Vertex v4 = map[i][0]; glVertex3d(v4.x, v4.y, v4.z);
-		glColor3d(1,1,1);
-		glEnd();
+	}
+
+	renderWater();
+}
+
+void Planet::renderWater()
+{
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	for(int i=0; i<mStacks; i++)
+	{
+		for(int j=0; j<mSlices; j++)
+		{
+			glBegin(GL_QUADS);
+			glColor4d(0,0.6,0.6,0.6);
+			int _j = j+1; if(_j>=mSlices) _j=0;
+			Vertex v1 = waterMap[i][j];
+			drawVertex(v1);
+			Vertex v2 = waterMap[i][_j];
+			drawVertex(v2);
+			Vertex v3 = waterMap[i+1][_j];
+			drawVertex(v3);
+			Vertex v4 = waterMap[i+1][j];
+			drawVertex(v4);
+			glEnd();
+		}
+	}
+	glDisable(GL_BLEND);
+}
+
+void Planet::colorVertex(ColorRGBA c)
+{
+	glColor4d(c.red(), c.green(), c.blue(), c.alpha());
+}
+
+void Planet::drawVertex(Vertex v)
+{
+
+	Vector3d normal(v.pos.x, v.pos.y, v.pos.z);
+	normal.normalize();
+
+	glNormal3d(normal.x, normal.y, normal.z);
+	glVertex3d(v.pos.x, v.pos.y, v.pos.z);
+}
+
+void Planet::elevateAll(double amount)
+{
+	for(int i=0; i<=mStacks; i++)
+	{
+		for(int j=0; j<mSlices; j++)
+		{
+			deformVertex(i,j,amount);
+		}
 	}
 }
+
+void Planet::elevatePoles(double amount)
+{
+	for(int j=0; j<mSlices; j++)
+	{
+//		Vertex vTop = map[0][j];
+//		Vertex vBottom = map[mStacks][j];
+		deformVertexLinear(0, j, amount/mSlices, 0.2);
+		deformVertexLinear(mStacks, j, amount/mSlices, 0.2);
+	}
+}
+
+void Planet::colorize()
+{
+	double maxHeight = 0;
+//	double minHeight = 0;
+
+	for(int i=0; i<=mStacks; i++)
+	{
+		for(int j=0; j<mSlices; j++)
+		{
+			Vector3d delta = map[i][j].pos - waterMap[i][j].pos;
+			double height = delta.length();
+			if(height > maxHeight) maxHeight = height;
+//			if(height < minHeight) minHeight = height;
+		}
+	}
+	for(int i=0; i<=mStacks; i++)
+	{
+		for(int j=0; j<mSlices; j++)
+		{
+			Vector3d delta = map[i][j].pos - waterMap[i][j].pos;
+			double height = delta.length();
+			double scale = 0;
+			if(maxHeight!=0)
+			{
+				scale = (2*height/maxHeight)-0.75;
+				if(scale > 1) scale = 1;
+				if(scale < 0) scale = 0;
+			}
+
+			ColorRGBA base(0.2,0.4,0.2,1);
+			ColorRGBA snow(1,1,1,scale);
+
+			base.blend(snow);
+
+
+
+			map[i][j].color = base;
+
+
+		}
+	}
+}
+
+
+

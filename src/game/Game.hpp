@@ -35,6 +35,7 @@ private:
 
 	bool mRunning;
 	int mWidth, mHeight;
+	int currentTime, lastTime;
 
 	Scene *mScene;
 
