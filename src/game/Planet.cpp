@@ -4,8 +4,8 @@
 #include <iostream>
 
 Planet::Planet() :
-	mSlices(4),
-	mStacks(4),
+	mSlices(6),
+	mStacks(6),
 	mRadius(1000.f)
 {
 
@@ -18,6 +18,7 @@ Planet::Planet() :
 	}
 
 	testMap = new GLfloat[3*(mSlices)*(mStacks+1)];
+	zob = new GLuint[4*mSlices*mStacks];
 
 
 	// computing and storing vertices
@@ -38,6 +39,7 @@ Planet::Planet() :
 			v.z = sin(t*M_PI/180.f)*mRadius;
 			map[ind_i][ind_j].pos = v;
 			map[ind_i][ind_j].color = c;
+			// vertices
 			testMap[(mSlices*3*ind_i)+ 3*ind_j+0]=v.x;
 			testMap[(mSlices*3*ind_i)+ 3*ind_j+1]=v.y;
 			testMap[(mSlices*3*ind_i)+ 3*ind_j+2]=v.z;
@@ -45,7 +47,25 @@ Planet::Planet() :
 		}
 		ind_i++;
 	}
-//	waterMap = map;
+
+	//faces
+	int cpt=0;
+	for(int i=0; i<mStacks; i++)
+	{
+		for(int j=0; j<mSlices; j++)
+		{
+			int _i = i+1;
+			if(_i>=mSlices) _i -= mSlices;
+			zob[cpt++] = i;
+			zob[cpt++] = _i;
+			zob[cpt++] = _i + (mSlices);
+			zob[cpt++] = i + (mSlices);
+			std::cout << "" << i << "," << _i << "," << _i + mSlices << "," << i + mSlices << std::endl;
+		}
+	}
+
+
+	waterMap = map;
 
 	// making relief
 //	elevatePoles(0.3);
@@ -212,8 +232,12 @@ void Planet::render()
 //	}
 
 	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState( GL_INDEX_ARRAY );
+
+	glIndexPointer( GL_UNSIGNED_INT, 0, zob );
 	glVertexPointer(3, GL_FLOAT, 0, testMap);
-	glDrawArrays(GL_POINTS, 0, 3*mStacks*mSlices);
+	glDrawElements(GL_QUADS, (mSlices*mStacks), GL_UNSIGNED_INT, zob);
+//	glDrawArrays(GL_POINTS, 0, 3*mStacks*mSlices);
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 
