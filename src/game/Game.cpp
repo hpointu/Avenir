@@ -10,8 +10,8 @@ Game::Game() :
 	mWidth(800),
 	mHeight(600)
 {
-	srand(1234);
-//	srand(time(0));
+//	srand(1234);
+	srand(time(0));
 	EventManager::getInstance()->subscribe(this);
 
 }
@@ -39,7 +39,7 @@ void Game::initOpenGL()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_COLOR_MATERIAL);
 
-//	glEnable(GL_NORMALIZE);
+	glEnable(GL_NORMALIZE);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
@@ -61,9 +61,10 @@ void Game::initOpenGL()
   */
 void Game::run()
 {
-//	lastTime = SDL_GetTicks();
-	currentTime = lastTime;
 	int frames = 0;
+
+	sf::Clock clock;
+	clock.Reset();
 	while(mRunning)
 	{
 		EventManager::getInstance()->captureEvent(window);
@@ -73,22 +74,16 @@ void Game::run()
 		// rendu de la scene :
 		mScene->render();
 
-//		currentTime = SDL_GetTicks();
-//		std::stringstream ss;
-//		ss << frames << " FPS";
-//		baseLogger()->infoLine(ss.str());
-//		if(currentTime - lastTime > 600)
-//		{
-//			std::stringstream ss;
-//			ss << frames << " FPS";
-//			baseLogger()->infoLine(ss.str());
-//			lastTime = currentTime;
-//			frames = 0;
-//		}
-
+		// fps
+		if(clock.GetElapsedTime() > 1)
+		{
+			std::stringstream ss;
+			ss << frames << " FPS";
+			baseLogger()->infoLine(ss.str());
+			clock.Reset();
+			frames = 0;
+		}
 		frames++;
-
-//		glFlush();
 		window->Display();
 	}
 }

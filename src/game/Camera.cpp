@@ -65,6 +65,15 @@ void Camera::onEvent(const sf::Event &event)
 		else
 			mZoom -= 0.05;
 	}
+
+	else if(event.Type == sf::Event::KeyPressed && (event.Key.Code == sf::Key::Up))
+	{
+		mZoom += 0.05;
+	}
+	else if(event.Type == sf::Event::KeyPressed && (event.Key.Code == sf::Key::Down))
+	{
+		mZoom -= 0.05;
+	}
 	//	if(event.type == SDL_MOUSEMOTION && mHold)
 	//	{
 	//		mTheta -= (event.motion.xrel*0.01)/(mZoom*mZoom);

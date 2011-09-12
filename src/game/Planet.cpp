@@ -4,8 +4,8 @@
 #include <iostream>
 
 Planet::Planet() :
-	mSlices(6),
-	mStacks(6),
+	mSlices(256),
+	mStacks(128),
 	mRadius(1000.f)
 {
 
@@ -17,8 +17,11 @@ Planet::Planet() :
 		map[i].resize(mSlices);
 	}
 
-	testMap = new GLfloat[3*(mSlices)*(mStacks+1)];
-	zob = new GLuint[4*mSlices*mStacks];
+	mVertexes = new GLfloat[3*(mSlices)*(mStacks+1)];
+	mWaterVertexes= new GLfloat[3*(mSlices)*(mStacks+1)];
+	mNormals = new GLfloat[3*(mSlices)*(mStacks+1)];
+	mColors = new GLfloat[4*(mSlices)*(mStacks+1)];
+	mIndices = new GLuint[4*mSlices*(mStacks+1)];
 
 
 	// computing and storing vertices
@@ -40,37 +43,38 @@ Planet::Planet() :
 			map[ind_i][ind_j].pos = v;
 			map[ind_i][ind_j].color = c;
 			// vertices
-			testMap[(mSlices*3*ind_i)+ 3*ind_j+0]=v.x;
-			testMap[(mSlices*3*ind_i)+ 3*ind_j+1]=v.y;
-			testMap[(mSlices*3*ind_i)+ 3*ind_j+2]=v.z;
+			updateArrays(ind_i, ind_j);
 			ind_j++;
 		}
 		ind_i++;
 	}
 
-	//faces
+	// create openGl indices
 	int cpt=0;
-	for(int i=0; i<mStacks; i++)
+	for(int i=0; i<mStacks+1; i++)
 	{
 		for(int j=0; j<mSlices; j++)
 		{
-			int _i = i+1;
-			if(_i>=mSlices) _i -= mSlices;
-			zob[cpt++] = i;
-			zob[cpt++] = _i;
-			zob[cpt++] = _i + (mSlices);
-			zob[cpt++] = i + (mSlices);
-			std::cout << "" << i << "," << _i << "," << _i + mSlices << "," << i + mSlices << std::endl;
+			int _j = j+1; if(_j>=mSlices) _j -= mSlices;
+
+			mIndices[cpt++] = i*mSlices+j;
+			mIndices[cpt++] = i*mSlices+_j;
+			mIndices[cpt++] = (i+1)*mSlices+_j;
+			mIndices[cpt++] = (i+1)*mSlices+j;
 		}
 	}
 
-
 	waterMap = map;
+	// copying water
+	for(int i=0; i<3*(mSlices)*(mStacks+1); i++)
+	{
+		mWaterVertexes[i] = mVertexes[i];
+	}
 
 	// making relief
-//	elevatePoles(0.3);
-//	randomizeMap(10.0/(mSlices));
-//	colorize();
+	elevatePoles(0.3);
+	randomizeMap(10.0/(mSlices));
+	colorize();
 }
 
 
@@ -154,6 +158,7 @@ void Planet::deformVertex(int i, int j, double amount)
 	v.y *= offset;
 	v.z *= offset;
 	map[i][j].pos = v;
+	updateArrays(i,j);
 }
 
 void Planet::deformLine(int i1, int j1, int i2, int j2, double amount, double radius)
@@ -233,12 +238,20 @@ void Planet::render()
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState( GL_INDEX_ARRAY );
+	glEnableClientState( GL_NORMAL_ARRAY );
+	glEnableClientState( GL_COLOR_ARRAY );
 
-	glIndexPointer( GL_UNSIGNED_INT, 0, zob );
-	glVertexPointer(3, GL_FLOAT, 0, testMap);
-	glDrawElements(GL_QUADS, (mSlices*mStacks), GL_UNSIGNED_INT, zob);
-//	glDrawArrays(GL_POINTS, 0, 3*mStacks*mSlices);
+//	glIndexPointer( GL_UNSIGNED_INT, 0, mIndices );
+//	glVertexAttribIPointer();
+	glVertexPointer(3, GL_FLOAT, 0, mVertexes);
+	glNormalPointer(GL_FLOAT, 0, mNormals);
+	glColorPointer(4, GL_FLOAT, 0, mColors);
+	glDrawElements(GL_QUADS, (mSlices*mStacks*4), GL_UNSIGNED_INT, mIndices);
+
 	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_INDEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
 
 
 //	renderWater();
@@ -246,17 +259,29 @@ void Planet::render()
 
 void Planet::renderWater()
 {
-	int di = 4;
-	int dj = 2;
+	int di = 1;
+	int dj = 1;
 
 //	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4d(0,0.6,0.6,0.6);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState( GL_INDEX_ARRAY );
+	glEnableClientState( GL_NORMAL_ARRAY );
+
+	glVertexPointer(3, GL_FLOAT, 0, mWaterVertexes);
+	glNormalPointer(GL_FLOAT, 0, mNormals);
+	glDrawElements(GL_QUADS, (mSlices*mStacks*4), GL_UNSIGNED_INT, mIndices);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_INDEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	/*
 	for(int i=0; i<mStacks/di; i++)
 	{
 		for(int j=0; j<mSlices/dj; j++)
 		{
-			glBegin(GL_POINTS);
+			glBegin(GL_QUADS);
 			glColor4d(0,0.6,0.6,0.6);
 			int _j = j+1; if(_j>=mSlices/dj) _j=0;
 			Vertex v1 = waterMap[di*i][dj*j];
@@ -267,9 +292,10 @@ void Planet::renderWater()
 			drawVertex(v3);
 			Vertex v4 = waterMap[di*(i+1)][dj*j];
 			drawVertex(v4);
+			glColor4d(1,1,1,1);
 			glEnd();
 		}
-	}
+	}*/
 	glDisable(GL_BLEND);
 }
 
@@ -320,9 +346,14 @@ void Planet::colorize()
 	{
 		for(int j=0; j<mSlices; j++)
 		{
-			Vector3d delta = map[i][j].pos - waterMap[i][j].pos;
+			Vector3d _h = waterMap[i][j].pos;
+			Vector3d _H = map[i][j].pos;
+			Vector3d delta =_H - _h;
 			double height = delta.length();
-			if(height > maxHeight) maxHeight = height;
+			if(_h.length() > _H.length())
+				if(height > maxHeight) maxHeight = height;
+
+
 //			if(height < minHeight) minHeight = height;
 		}
 	}
@@ -349,10 +380,33 @@ void Planet::colorize()
 
 			map[i][j].color = base;
 
+			// vertex colors
+			Vertex v = map[i][j];
+			mColors[(mSlices*4*i)+ (4*j)+0]=v.color.red();
+			mColors[(mSlices*4*i)+ (4*j)+1]=v.color.green();
+			mColors[(mSlices*4*i)+ (4*j)+2]=v.color.blue();
+			mColors[(mSlices*4*i)+ (4*j)+3]=v.color.alpha();
 
 		}
 	}
 }
 
 
+
+void Planet::updateArrays(int i, int j)
+{
+	Vertex v = map[i][j];
+	// update vertex positions
+	mVertexes[(mSlices*3*i)+ (3*j)+0]=v.pos.x;
+	mVertexes[(mSlices*3*i)+ (3*j)+1]=v.pos.y;
+	mVertexes[(mSlices*3*i)+ (3*j)+2]=v.pos.z;
+
+	// vertex normals
+	Vector3d normal(v.pos.x, v.pos.y, v.pos.z);
+	normal.normalize();
+	mNormals[(mSlices*3*i)+ (3*j)+0]=normal.x;
+	mNormals[(mSlices*3*i)+ (3*j)+1]=normal.y;
+	mNormals[(mSlices*3*i)+ (3*j)+2]=normal.z;
+
+}
 

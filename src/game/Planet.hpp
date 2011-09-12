@@ -22,6 +22,8 @@ public:
 	void deformLine(int i1, int j1, int i2, int j2, double amount, double radius = 0.1);
 	void createRiver(int startJ);
 
+	void updateArrays(int i, int j);
+
 private:
 	typedef struct
 	{
@@ -46,8 +48,11 @@ private:
 	std::vector< std::vector<Vertex> > map;
 	std::vector< std::vector<Vertex> > waterMap;
 
-	GLfloat *testMap;
-	GLuint *zob;
+	GLfloat *mVertexes;
+	GLfloat *mWaterVertexes;
+	GLfloat *mNormals;
+	GLfloat *mColors;
+	GLuint *mIndices;
 };
 
 #endif // PLANET_HPP
