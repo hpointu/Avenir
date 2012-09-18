@@ -39,6 +39,7 @@ private:
 	void drawVertex(Vertex v);
 
 	void renderWater();
+	void renderNormals();
 
 	void elevateAll(double amount = 0.1);
 	void elevatePoles(double amount = 0.1);

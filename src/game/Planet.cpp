@@ -72,7 +72,8 @@ Planet::Planet() :
 	}
 
 	// making relief
-	elevatePoles(0.3);
+	elevatePoles(0.05);
+//	elevatePoles(-0.5);
 	randomizeMap(10.0/(mSlices));
 	colorize();
 }
@@ -93,7 +94,8 @@ void Planet::randomizeMap(double factor)
 		for(int j=0; j<mSlices; j++)
 		{
 			double fac = (rand()%10000)/10000.f;
-			fac -= 0.5;
+			fac -= 0.51;
+//			fac -= 0.5;
 			fac /= 2;
 			fac *= (modifier/(mStacks/2));
 
@@ -212,7 +214,7 @@ void Planet::createRiver(int startJ)
 
 void Planet::render()
 {
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	// render sphere from map
 //	for(int i=0; i<mStacks; i++)
 //	{
@@ -262,7 +264,7 @@ void Planet::renderWater()
 	int di = 1;
 	int dj = 1;
 
-//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4d(0,0.6,0.6,0.6);
@@ -299,6 +301,23 @@ void Planet::renderWater()
 	glDisable(GL_BLEND);
 }
 
+void Planet::renderNormals()
+{
+	for(int i=0; i<mStacks; i++)
+	{
+		for(int j=0; j<mSlices; j++)
+		{
+			glBegin(GL_POINTS);
+			Vector3d v;
+			Vertex vert = map[i][j];
+			v.x = mNormals[(mSlices*3*i)+ (3*j)+0];
+			v.y = mNormals[(mSlices*3*i)+ (3*j)+0];
+			v.z = mNormals[(mSlices*3*i)+ (3*j)+0];
+			glEnd();
+		}
+	}
+}
+
 void Planet::colorVertex(ColorRGBA c)
 {
 	glColor4d(c.red(), c.green(), c.blue(), c.alpha());
@@ -332,8 +351,8 @@ void Planet::elevatePoles(double amount)
 	{
 //		Vertex vTop = map[0][j];
 //		Vertex vBottom = map[mStacks][j];
-		deformVertexLinear(0, j, amount/mSlices, 0.2);
-		deformVertexLinear(mStacks, j, amount/mSlices, 0.2);
+		deformVertexLinear(0, j, amount/mSlices, 0.4);
+		deformVertexLinear(mStacks, j, amount/mSlices, 0.4);
 	}
 }
 
